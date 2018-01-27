@@ -1,0 +1,1 @@
+from .kniopass import PasswordStore
