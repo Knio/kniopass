@@ -1,3 +1,3 @@
-from .kniopass import main
+from kniopass import main
 
 main()
