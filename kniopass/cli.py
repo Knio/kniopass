@@ -29,9 +29,9 @@ colorama.init()
 def color(style, text):
     return style + text + colorama.Style.RESET_ALL
 
-bold = functools.partial(color, colorama.Style.BRIGHT)
+bold = functools.partial(color, colorama.Style.BRIGHT + colorama.Fore.YELLOW)
 norm = functools.partial(color, colorama.Style.NORMAL)
-hide = functools.partial(color, colorama.Fore.WHITE + colorama.Back.WHITE)
+hide = functools.partial(color, colorama.Fore.YELLOW + colorama.Back.YELLOW)
 yellow = functools.partial(color, colorama.Fore.YELLOW)
 
 
@@ -186,7 +186,7 @@ class KnioPassCLI(KnioPass):
         items += sorted(data.items())
         for k, v in items:
             if k in ('name', 'password'): continue
-            print('{:>10s}: {}'.format(k, v))
+            print('{:>10s}: {}'.format(k, yellow(v)))
         if notes:
             print('     notes:')
             print(yellow(notes))

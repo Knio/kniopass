@@ -17,7 +17,12 @@ def main():
     parser.add_argument('--file')
     parser.add_argument('--create')
     parser.add_argument('--generate', action='store_true')
+    parser.add_argument('--import-keepass')
     args = parser.parse_args()
+
+    # if args.importKeypass:
+    #     from .keepass_cvs_import import read_keypass
+    #     read_keypass(args.import_keypass)
 
     if args.generate:
         pw = KnioPassCLI.password_picker()
@@ -29,6 +34,7 @@ def main():
             raise Exception('File already exists. Refusing to overwrite')
         password = getpass.getpass('Password for {}: '.format(args.create))
         pw = KnioPass(filename=args.create, password=password)
+        pw.rekey()
         pw.data = {}
         pw.save()
         LOG.info('Created new empty password store %s', args.create)

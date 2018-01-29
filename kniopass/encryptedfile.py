@@ -13,9 +13,8 @@ BACKEND = cryptography.hazmat.backends.default_backend()
 LOG = logging.getLogger()
 
 class EncryptedFile(object):
-    DATA_MAGIC = b'kniopass'
-    KEY_SALT = b'kniopass890123456'
-    KEY_ITERATIONS = (1 << 19)
+    DATA_MAGIC = b'kniopass00000001'
+    SALT_LENGTH = 32
     ALGORITHMS = [
         (32, cryptography.hazmat.primitives.ciphers.algorithms.AES),
         (32, cryptography.hazmat.primitives.ciphers.algorithms.Camellia),
@@ -26,16 +25,21 @@ class EncryptedFile(object):
 
     def __init__(self, filename, password):
         self.filename = filename
-        self.key = self.compute_key(password)
+        self.password = password
+        self.salt = None
+        self.key = None
+
+    def rekey(self):
+        self.salt = os.urandom(self.SALT_LENGTH)
+        self.key = self.compute_key(self.salt, self.password)
 
     @classmethod
-    def compute_key(cls, password):
-        keygen = cryptography.hazmat.primitives.kdf.pbkdf2.PBKDF2HMAC(
+    def compute_key(cls, salt, password):
+        keygen = cryptography.hazmat.primitives.kdf.scrypt.Scrypt(
             backend=BACKEND,
-            algorithm=cryptography.hazmat.primitives.hashes.SHA256(),
             length=cls.KEY_LENGTH,
-            salt=cls.KEY_SALT,
-            iterations=cls.KEY_ITERATIONS
+            salt=salt,
+            n=2<<18, r=8, p=1,
         )
         return keygen.derive(password.encode('utf-8'))
 
@@ -83,14 +87,22 @@ class EncryptedFile(object):
     def load_file(self):
         LOG.info('Loading %s', self.filename)
         data = open(self.filename, 'rb').read()
+        if not data[0:16] == self.DATA_MAGIC:
+            raise Exception('Not a kniopass file. (magic = {!r}'.format(data[0:16]))
+        data = data[16:]
+        self.salt = data[:self.SALT_LENGTH]
+        data = data[self.SALT_LENGTH:]
+        self.key = self.compute_key(self.salt, self.password)
         data = self.decrypt_data(self.key, data)
-        if not data[0:8] == self.DATA_MAGIC:
+        if not data[0:16] == self.DATA_MAGIC:
+            print(data)
             raise Exception('Wrong password')
-        data = data[8:].decode('utf-8')
+        data = data[16:].decode('utf-8')
         return data
 
     def save_file(self, data):
         data = self.DATA_MAGIC + data.encode('utf-8')
         data = self.encrypt_data(self.key, data)
+        data = self.DATA_MAGIC + self.salt + data
         LOG.info('Saving to %s', self.filename)
         open(self.filename, 'wb').write(data)
