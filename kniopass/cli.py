@@ -6,6 +6,7 @@ import collections
 import functools
 import getpass
 import json
+import time
 import os
 import string
 import sys
@@ -119,6 +120,25 @@ class KnioPassCLI(KnioPass):
                 sets_enabled.symmetric_difference_update({'extra symbols'})
             pw = generate()
 
+    def fuzzy_find(self, search):
+        matches = []
+        exact_matches = []
+        for entry in self.data.values():
+            s = search
+            match = entry['data']['name']
+            if match == search:
+                exact_matches.append(entry)
+            while s:
+                n = match.find(s[0])
+                if n == -1:
+                    break
+                s = s[1:]
+                match = match[n:]
+            if s:
+                continue
+            matches.append(entry)
+        return matches, exact_matches
+
     def command_password(self):
         print(self.generate_password())
 
@@ -193,23 +213,7 @@ class KnioPassCLI(KnioPass):
         print()
 
     def command_show(self, search):
-        matches = []
-        exact_matches = []
-        for entry in self.data.values():
-            s = search
-            match = entry['data']['name']
-            if match == search:
-                exact_matches.append(entry)
-            while s:
-                n = match.find(s[0])
-                if n == -1:
-                    break
-                s = s[1:]
-                match = match[n:]
-            if s:
-                continue
-            matches.append(entry)
-
+        matches, exact_matches = self.fuzzy_find(search)
         if len(exact_matches) == 1:
             self.show_entry(exact_matches[0])
             return
@@ -232,7 +236,7 @@ class KnioPassCLI(KnioPass):
 
         print('Found multiple matches:')
         for entry in matches:
-            print('   ' + entry['name'])
+            print('   ' + yellow(entry['data']['name']))
 
     def command_list(self):
         fmt = '{name:20s} {username:20s} {url:30s} {email:20s} {notes}'
@@ -253,6 +257,50 @@ class KnioPassCLI(KnioPass):
             data.update({k:norm(v) for k, v in entry['data'].items()})
             print(fmt.format_map(data))
 
+    def command_copy(self, search):
+        try:
+            import win32clipboard as w
+            import win32con
+
+            def set_cb(text):
+                w.OpenClipboard()
+                last = w.GetClipboardData(win32con.CF_UNICODETEXT)
+                w.EmptyClipboard()
+                w.SetClipboardData(win32con.CF_UNICODETEXT, text.encode('utf-16'))
+                w.CloseClipboard()
+                return last
+        except ImportError:
+            print('Copy not supported')
+            return
+
+        def copy(entry):
+            last = set_cb(entry['data']['password'])
+            print('Copied password for {}'.format(bold(entry['data']['name'])))
+            print('Clearing in 10 seconds...')
+            time.sleep(10)
+            set_cb(last)
+
+        matches, exact_matches = self.fuzzy_find(search)
+
+        if len(exact_matches) > 1:
+            print('Multiple Entries found, cannot copy')
+            return
+
+        if len(exact_matches) == 1:
+            copy(exact_matches[0])
+            return
+
+        if len(matches) > 1:
+            print('Multiple Entries found, cannot copy')
+            command_show(search)
+            return
+
+        if len(matches) == 1:
+            copy(matches[0])
+            return
+
+        print('No matching entries.')
+
     def repl(self):
         while True:
             try:
@@ -266,9 +314,10 @@ class KnioPassCLI(KnioPass):
                     print('Invalid command')
                     continue
                 m(*args)
-            except (ExitException, KeyboardInterrupt):
+            except (ExitException, KeyboardInterrupt, EOFError):
                 break
             except Exception as e:
                 import traceback
                 traceback.print_exc()
 
+        print('\nExiting')

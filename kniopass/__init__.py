@@ -20,9 +20,18 @@ def main():
     parser.add_argument('--import-keepass')
     args = parser.parse_args()
 
-    # if args.importKeypass:
-    #     from .keepass_cvs_import import read_keypass
-    #     read_keypass(args.import_keypass)
+    if args.import_keepass:
+        from .keepass_cvs_import import read_keepass
+        if os.path.isfile(args.create):
+            raise Exception('File already exists. Refusing to overwrite')
+        password = getpass.getpass('Password for {}: '.format(args.create))
+        pw = KnioPass(filename=args.create, password=password)
+        pw.rekey()
+        pw.data = {}
+        read_keepass(args.import_keepass, pw)
+        pw.save()
+        LOG.info('Imported %s to %s', args.import_keepass, args.create)
+        return
 
     if args.generate:
         pw = KnioPassCLI.password_picker()
