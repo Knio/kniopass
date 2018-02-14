@@ -261,23 +261,30 @@ class KnioPassCLI(KnioPass):
         try:
             import win32clipboard as w
             import win32con
-
-            def set_cb(text):
-                w.OpenClipboard()
-                last = w.GetClipboardData(win32con.CF_UNICODETEXT)
-                w.EmptyClipboard()
-                w.SetClipboardData(win32con.CF_UNICODETEXT, text.encode('utf-16'))
-                w.CloseClipboard()
-                return last
         except ImportError:
             print('Copy not supported')
             return
+
+        def set_cb(text):
+            w.OpenClipboard()
+            try:
+                last = w.GetClipboardData(win32con.CF_UNICODETEXT)
+            except TypeError:
+                last = b'\0\0'
+            w.EmptyClipboard()
+            w.SetClipboardText(text, win32con.CF_TEXT)
+            w.SetClipboardText(text, win32con.CF_UNICODETEXT)
+            w.CloseClipboard()
+            return last
 
         def copy(entry):
             last = set_cb(entry['data']['password'])
             print('Copied password for {}'.format(bold(entry['data']['name'])))
             print('Clearing in 10 seconds...')
-            time.sleep(10)
+            try:
+                time.sleep(10)
+            except KeyboardInterrupt:
+                pass
             set_cb(last)
 
         matches, exact_matches = self.fuzzy_find(search)
@@ -292,7 +299,7 @@ class KnioPassCLI(KnioPass):
 
         if len(matches) > 1:
             print('Multiple Entries found, cannot copy')
-            command_show(search)
+            self.command_show(search)
             return
 
         if len(matches) == 1:
