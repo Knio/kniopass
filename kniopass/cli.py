@@ -39,25 +39,30 @@ yellow = functools.partial(color, colorama.Fore.YELLOW)
 def get_choice(prompt, choices, default=None):
     while True:
         print('{} [{}]: '.format(prompt, '/'.join(choices)), end='', flush=True)
+
         if msvcrt:
             c = msvcrt.getch().decode('utf-8')
             print()
         else:
             orig_settings = termios.tcgetattr(sys.stdin)
             tty.setraw(sys.stdin)
-            c = chr(sys.stdin.read(1)[0])
+            c = sys.stdin.read(1)[0]
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, orig_settings)
+
         if c in choices:
             return c
+
         if default is not None:
             return default
 
 
-class ExitException(Exception): pass
+class ExitException(Exception):
+    pass
 
 
 class KnioPassCLI(KnioPass):
     DEFAULT_FIELDS = ('url', 'username', 'email')
+
     @classmethod
     def password_picker(cls):
         sets = [
@@ -83,7 +88,7 @@ class KnioPassCLI(KnioPass):
                 return ''
 
         help_text = (
-            '[y] accept password             Toggle options:\n'
+            '\n[y] accept password             Toggle options:\n'
             '[enter] regenerate              [a] start with letter\n'
             '[m] manually enter password     [l] lowercase letters\n'
             '[+] longer                      [u] uppercase letters\n'
