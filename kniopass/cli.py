@@ -45,7 +45,11 @@ def get_choice(prompt, choices, default=None):
         else:
             orig_settings = termios.tcgetattr(sys.stdin)
             tty.setraw(sys.stdin)
-            c = chr(sys.stdin.read(1)[0])
+            c  = sys.stdin.read(1)[0]
+
+            if type(c) is int:
+                c = chr(c)
+
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, orig_settings)
         if c in choices:
             return c
@@ -58,6 +62,7 @@ class ExitException(Exception): pass
 
 class KnioPassCLI(KnioPass):
     DEFAULT_FIELDS = ('url', 'username', 'email')
+
     @classmethod
     def password_picker(cls):
         sets = [
