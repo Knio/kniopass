@@ -58,3 +58,4 @@ class KnioPass(EncryptedFile):
                 continue
             return ''.join(password)
         raise Exception('Impossible requirements')
+

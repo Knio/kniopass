@@ -190,6 +190,16 @@ class KnioPassCLI(KnioPass):
         self.add(name, **data)
         self.save()
 
+    def command_help(self):
+        m = getattr(self, 'command_', None)
+        commands = [p.replace('command_', '') for p in dir(self) if p.startswith('command_')]
+        commands.sort()
+
+        print('\nCommands:')
+        for command in commands:
+            print('  {}'.format(command))
+        print()
+
     def command_save(self):
         self.save()
 
@@ -318,9 +328,16 @@ class KnioPassCLI(KnioPass):
             try:
                 prompt = '{}> '.format(os.path.basename(self.filename))
                 command = input(prompt).strip().split()
+
                 if not command:
                     continue
+
                 c, args = command[0], command[1:]
+
+                if c in ['h', '?']:
+                    self.command_help()
+                    continue
+
                 m = getattr(self, 'command_{}'.format(c), None)
                 if not m:
                     print('Invalid command')
