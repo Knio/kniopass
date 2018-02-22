@@ -45,11 +45,7 @@ def get_choice(prompt, choices, default=None):
         else:
             orig_settings = termios.tcgetattr(sys.stdin)
             tty.setraw(sys.stdin)
-            c  = sys.stdin.read(1)[0]
-
-            if type(c) is int:
-                c = chr(c)
-
+            c = sys.stdin.read(1)[0]
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, orig_settings)
         if c in choices:
             return c
@@ -88,7 +84,7 @@ class KnioPassCLI(KnioPass):
                 return ''
 
         help_text = (
-            '[y] accept password             Toggle options:\n'
+            '\n[y] accept password             Toggle options:\n'
             '[enter] regenerate              [a] start with letter\n'
             '[m] manually enter password     [l] lowercase letters\n'
             '[+] longer                      [u] uppercase letters\n'
