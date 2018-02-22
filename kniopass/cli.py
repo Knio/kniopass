@@ -39,6 +39,7 @@ yellow = functools.partial(color, colorama.Fore.YELLOW)
 def get_choice(prompt, choices, default=None):
     while True:
         print('{} [{}]: '.format(prompt, '/'.join(choices)), end='', flush=True)
+
         if msvcrt:
             c = msvcrt.getch().decode('utf-8')
             print()
@@ -47,13 +48,16 @@ def get_choice(prompt, choices, default=None):
             tty.setraw(sys.stdin)
             c = sys.stdin.read(1)[0]
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, orig_settings)
+
         if c in choices:
             return c
+
         if default is not None:
             return default
 
 
-class ExitException(Exception): pass
+class ExitException(Exception):
+    pass
 
 
 class KnioPassCLI(KnioPass):
