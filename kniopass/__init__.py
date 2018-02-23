@@ -5,6 +5,7 @@ import os
 
 from .kniopass import KnioPass
 from .cli import KnioPassCLI
+from ._version import __version__
 
 
 LOG = logging.getLogger()
@@ -13,11 +14,12 @@ LOG = logging.getLogger()
 def main():
     logging.basicConfig(level=logging.INFO)
 
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(prog='kniopass', description='')
     parser.add_argument('--file')
     parser.add_argument('--create')
     parser.add_argument('--generate', action='store_true')
     parser.add_argument('--import-keepass')
+    parser.add_argument('--version', action='version', version='%(prog)s version: {}'.format(__version__))
     args = parser.parse_args()
 
     if args.import_keepass:
@@ -56,6 +58,9 @@ def main():
         pw = KnioPassCLI(filename=args.file, password=password)
         pw.load()
         pw.repl()
+        return
+
+    parser.print_help()
 
 
 if __name__ == '__main__':
