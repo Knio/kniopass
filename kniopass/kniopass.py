@@ -36,6 +36,15 @@ class KnioPass(EncryptedFile):
         self.data[entry['uuid']] = entry
         self.modified = True
 
+    def edit(self, uuid, **new_data):
+        entry = self.data[uuid]
+        entry['history'].append(entry['data'])
+        entry['data'] = {
+            'time': datetime.datetime.utcnow().isoformat(),
+            **new_data
+        }
+        self.modified = True
+
     @staticmethod
     def generate_password(sets=None, first_set=None, length=16):
         all_chars = ''.join(sets)

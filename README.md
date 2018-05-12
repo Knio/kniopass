@@ -9,6 +9,7 @@ No instructions provided because you should probably not use this.
 Todo:
 
 - [ ] test on linux
-- [ ] edit items
+- [x] edit items
 - [ ] delete items
 - [ ] show item history
+- [ ] add item with spaces

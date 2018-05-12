@@ -174,9 +174,11 @@ class KnioPassCLI(KnioPass):
         c = get_choice('Add notes?', 'yN', default='N')
         if c == 'y':
             lines = []
+            print("('.' or ^D to end)")
             while True:
                 line = input()
                 if line == '.': break
+                if line == '\x04': break
                 lines.append(line)
             data['notes'] = '\n'.join(lines)
 
@@ -314,6 +316,52 @@ class KnioPassCLI(KnioPass):
             return
 
         print('No matching entries.')
+
+
+    def command_edit(self, search):
+        matches, exact_matches = self.fuzzy_find(search)
+
+        if len(exact_matches) > 1:
+            print('Multiple Entries found, cannot edit')
+            return
+        elif len(exact_matches) == 1:
+            entry = exact_matches[0]
+        else:
+            if len(matches) > 1:
+                print('Multiple Entries found, cannot edit')
+                self.command_show(search)
+                return
+            if len(matches) != 1:
+                print('No matching entries.')
+                return
+            entry = matches[0]
+
+        new_data = dict(entry['data'])
+        new_data.pop('time', None)
+        edited = False
+        for field in sorted(new_data.keys()):
+            if field in {'time'}:
+                continue
+            c = get_choice('Edit {}?'.format(bold(field)), 'yN', default='N')
+            if c != 'y':
+                continue
+            print('Current value for {}: {}'.format(
+                bold(field),
+                yellow(new_data[field])))
+            if field == 'password':
+                new_value = self.password_picker()
+            else:
+                new_value = input('New value for {}: '.format(field))
+            if new_data[field] != new_value:
+                new_data[field] = new_value
+                edited = True
+
+        if edited:
+            self.edit(entry['uuid'], **new_data)
+            self.save()
+        else:
+            print('Nothing edited!')
+
 
     def repl(self):
         while True:
