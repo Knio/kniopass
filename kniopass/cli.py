@@ -134,8 +134,10 @@ class KnioPassCLI(KnioPass):
             if match == search:
                 exact_matches.append(entry)
             while s:
-                n = match.find(s[0])
-                if n == -1:
+                for n, c in enumerate(match):
+                    if s[0] == c: break
+                    if s[0].islower() and s[0] == c.lower(): break
+                else:
                     break
                 s = s[1:]
                 match = match[n:]
@@ -290,7 +292,7 @@ class KnioPassCLI(KnioPass):
                 time.sleep(10)
             except KeyboardInterrupt:
                 pass
-            set_cb(last)
+            set_cb(u'')
 
         matches, exact_matches = self.fuzzy_find(search)
 
