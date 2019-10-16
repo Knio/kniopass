@@ -43,7 +43,7 @@ class EncryptedFile(object):
 
     def rekey(self):
         self.salt = os.urandom(self.SALT_LENGTH)
-        self.key = self.compute_key(self.salt, self.password)
+        self.key = self.compute_key_v1(self.salt, self.password)
 
     @classmethod
     def compute_key_v0(cls, salt, password):
