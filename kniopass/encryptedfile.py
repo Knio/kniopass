@@ -46,10 +46,20 @@ class EncryptedFile(object):
         self.key = self.compute_key(self.salt, self.password)
 
     @classmethod
-    def compute_key(cls, salt, password):
+    def compute_key_v0(cls, salt, password):
         keygen = cryptography.hazmat.primitives.kdf.scrypt.Scrypt(
             backend=BACKEND,
             length=cls.KEY_LENGTH_V0,
+            salt=salt,
+            n=2<<18, r=8, p=1,
+        )
+        return keygen.derive(password.encode('utf-8'))
+
+    @classmethod
+    def compute_key_v1(cls, salt, password):
+        keygen = cryptography.hazmat.primitives.kdf.scrypt.Scrypt(
+            backend=BACKEND,
+            length=cls.KEY_LENGTH_V1,
             salt=salt,
             n=2<<18, r=8, p=1,
         )
@@ -160,11 +170,13 @@ class EncryptedFile(object):
 
         salt = data[offset:offset+cls.SALT_LENGTH]
         offset += cls.SALT_LENGTH
-        key = cls.compute_key(salt, passphrase)
+        key = None
         if version == 0:
             data = data[offset:]
+            key = cls.compute_key_v0(salt, passphrase)
             data = cls.decrypt_data_v0(key, data)
         elif version == 1:
+            key = cls.compute_key_v1(salt, passphrase)
             data = cls.decrypt_data_v1(key, data)
         else:
             raise Exception('Unknown version')
