@@ -13,6 +13,7 @@ import sys
 
 import colorama
 try:
+    import readline # needed for linux
     import tty
     import termios
 except ImportError:
@@ -48,7 +49,7 @@ def get_choice(prompt, choices, default=None):
             tty.setraw(sys.stdin)
             c = sys.stdin.read(1)[0]
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, orig_settings)
-
+            print()
         if c in choices:
             return c
 
@@ -152,6 +153,19 @@ class KnioPassCLI(KnioPass):
     def command_dump(self):
         print(json.dumps(self.data, sort_keys=True, indent=2))
 
+
+    @staticmethod
+    def get_notes():
+        lines = []
+        print("('.' or ^D to end)")
+        while True:
+            line = input()
+            if line == '.': break
+            if line == '\x04': break
+            lines.append(line)
+        return '\n'.join(lines)
+
+
     def command_add(self, name):
         existing = [e for e in self.data.values() if e['data'].get('name') == name]
         if existing:
@@ -173,14 +187,7 @@ class KnioPassCLI(KnioPass):
 
         c = get_choice('Add notes?', 'yN', default='N')
         if c == 'y':
-            lines = []
-            print("('.' or ^D to end)")
-            while True:
-                line = input()
-                if line == '.': break
-                if line == '\x04': break
-                lines.append(line)
-            data['notes'] = '\n'.join(lines)
+            data['notes'] = self.get_notes()
 
         while True:
             c = get_choice('Add other fields?', 'yN', default='N')
@@ -350,6 +357,8 @@ class KnioPassCLI(KnioPass):
                 yellow(new_data[field])))
             if field == 'password':
                 new_value = self.password_picker()
+            elif field == 'notes':
+                new_value = self.get_notes()
             else:
                 new_value = input('New value for {}: '.format(field))
             if new_data[field] != new_value:
