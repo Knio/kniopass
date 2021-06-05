@@ -14,6 +14,9 @@ import sys
 import colorama
 try:
     import readline # needed for linux
+except ImportError:
+    pass
+try:
     import tty
     import termios
 except ImportError:
@@ -43,13 +46,18 @@ def get_choice(prompt, choices, default=None):
 
         if msvcrt:
             c = msvcrt.getch().decode('utf-8')
+            # print('[getch: %r]' % c)
             print()
+            # Fix bad windows behavior
+            # assert msvcrt.getch() == b'\x00'
         else:
+            # linux
             orig_settings = termios.tcgetattr(sys.stdin)
             tty.setraw(sys.stdin)
             c = sys.stdin.read(1)[0]
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, orig_settings)
             print()
+
         if c in choices:
             return c
 
@@ -63,6 +71,17 @@ class ExitException(Exception):
 
 class KnioPassCLI(KnioPass):
     DEFAULT_FIELDS = ('url', 'username', 'email')
+
+    @classmethod
+    def notes_input(cls):
+        lines = []
+        print("('.' or ^D to end)")
+        while True:
+            line = input()
+            if line == '.': break
+            if line == '\x04': break
+            lines.append(line)
+        return '\n'.join(lines)
 
     @classmethod
     def password_picker(cls):
@@ -120,7 +139,6 @@ class KnioPassCLI(KnioPass):
             if command == 'u':
                 sets_enabled.symmetric_difference_update({'upper'})
             if command == 'b':
-                print('bbbb')
                 sets_enabled.symmetric_difference_update({'basic symbols'})
             if command == 'e':
                 sets_enabled.symmetric_difference_update({'extra symbols'})
@@ -153,19 +171,6 @@ class KnioPassCLI(KnioPass):
     def command_dump(self):
         print(json.dumps(self.data, sort_keys=True, indent=2))
 
-
-    @staticmethod
-    def get_notes():
-        lines = []
-        print("('.' or ^D to end)")
-        while True:
-            line = input()
-            if line == '.': break
-            if line == '\x04': break
-            lines.append(line)
-        return '\n'.join(lines)
-
-
     def command_add(self, name):
         existing = [e for e in self.data.values() if e['data'].get('name') == name]
         if existing:
@@ -187,7 +192,7 @@ class KnioPassCLI(KnioPass):
 
         c = get_choice('Add notes?', 'yN', default='N')
         if c == 'y':
-            data['notes'] = self.get_notes()
+            data['notes'] = self.notes_input()
 
         while True:
             c = get_choice('Add other fields?', 'yN', default='N')
@@ -346,24 +351,30 @@ class KnioPassCLI(KnioPass):
         new_data = dict(entry['data'])
         new_data.pop('time', None)
         edited = False
-        for field in sorted(new_data.keys()):
+        keys = sorted(set(self.DEFAULT_FIELDS) | new_data.keys() | {'notes'})
+        for field in keys:
             if field in {'time'}:
                 continue
             c = get_choice('Edit {}?'.format(bold(field)), 'yN', default='N')
             if c != 'y':
                 continue
-            print('Current value for {}: {}'.format(
-                bold(field),
-                yellow(new_data[field])))
+            current = new_data.get(field, None)
+            if current is not None:
+                print('Current value for {}: {}'.format(
+                    bold(field),
+                    yellow(current)))
+            else:
+                print('No current value for {}'.format(bold(field)))
             if field == 'password':
                 new_value = self.password_picker()
             elif field == 'notes':
-                new_value = self.get_notes()
+                new_value = self.notes_input()
             else:
                 new_value = input('New value for {}: '.format(field))
-            if new_data[field] != new_value:
+            if current != new_value:
                 new_data[field] = new_value
                 edited = True
+        # TODO add custom field
 
         if edited:
             self.edit(entry['uuid'], **new_data)
@@ -380,9 +391,11 @@ class KnioPassCLI(KnioPass):
                 if not command:
                     continue
                 c, args = command[0], command[1:]
+                if c == '\x04': # ^D
+                    break
                 m = getattr(self, 'command_{}'.format(c), None)
                 if not m:
-                    print('Invalid command')
+                    print('Invalid command: {!r}'.format(c))
                     continue
                 m(*args)
             except (ExitException, KeyboardInterrupt, EOFError):
