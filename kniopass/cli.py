@@ -166,7 +166,7 @@ class KnioPassCLI(KnioPass):
         return matches, exact_matches
 
     def command_password(self):
-        print(self.generate_password())
+        self.password_picker()
 
     def command_dump(self):
         print(json.dumps(self.data, sort_keys=True, indent=2))
@@ -351,7 +351,7 @@ class KnioPassCLI(KnioPass):
         new_data = dict(entry['data'])
         new_data.pop('time', None)
         edited = False
-        keys = sorted(set(self.DEFAULT_FIELDS) | new_data.keys() | {'notes'})
+        keys = sorted(set(self.DEFAULT_FIELDS) | new_data.keys() | {'notes', 'password'})
         for field in keys:
             if field in {'time'}:
                 continue
@@ -387,7 +387,7 @@ class KnioPassCLI(KnioPass):
         while True:
             try:
                 prompt = '{}> '.format(os.path.basename(self.filename))
-                command = input(prompt).strip().split()
+                command = input(prompt).strip().split(' ', 1)
                 if not command:
                     continue
                 c, args = command[0], command[1:]
