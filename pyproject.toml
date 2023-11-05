@@ -1,0 +1,33 @@
+[project]
+name = "kniopass"
+description = "Simple command-line password manager"
+readme = "README.md"
+authors = [
+  {name="Tom Flanagan", email="tom@zkpq.ca"}
+]
+classifiers = [
+  'Environment :: Console',
+  'Intended Audience :: End Users/Desktop',
+  'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+  'Operating System :: OS Independent',
+  'Programming Language :: Python',
+  'Programming Language :: Python :: 3',
+  'Topic :: Security',
+  'Topic :: Security :: Cryptography',
+  'Topic :: Utilities',
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/Knio/kniopass"
+Source = "https://github.com/Knio/kniopass"
+
+[project.scripts]
+kniopass = "kniopass:main"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = {attr = "kniopass._version.version"}
