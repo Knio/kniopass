@@ -17,7 +17,7 @@ LOG = logging.getLogger()
 class KnioPass(EncryptedFile):
     def save(self):
         data = json.dumps(self.data, sort_keys=True, indent=2)
-        self.save_file(data)
+        self.save_file(data.encode('utf-8'))
 
     def load(self):
         data = self.load_file()

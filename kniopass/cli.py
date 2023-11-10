@@ -10,8 +10,6 @@ import time
 import os
 import string
 import sys
-
-import colorama
 try:
     import readline # needed for linux
 except ImportError:
@@ -25,6 +23,8 @@ try:
     import msvcrt
 except ImportError:
     msvcrt = None
+
+import colorama
 
 from .kniopass import KnioPass
 
@@ -90,7 +90,7 @@ class KnioPassCLI(KnioPass):
             ('u', 'uppercase', string.ascii_uppercase),
             ('d', 'digits', string.digits),
             ('b', 'basic symbols', '!@#$%^&*'),
-            ('e', 'extra symbols', '()_+-=<>,.{}[]\|?/~`"\''),
+            ('e', 'extra symbols', '()_+-=<>,.{}[]\\|?/~`"\''),
         ]
         sets_enabled = {
             'lowercase', 'uppercase', 'digits', 'basic symbols'
